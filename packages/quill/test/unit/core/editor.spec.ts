@@ -1423,6 +1423,37 @@ describe('Editor', () => {
         expect(parse(html).querySelector('img')).toBeNull();
         expect(parse(html).textContent).toEqual(payload);
       });
+
+      test('video', () => {
+        const payload = 'https://example.com/" onmouseover="alert(1)';
+        const editor = createEditor(new Delta().insert({ video: payload }));
+        const html = editor.getHTML(0, 1);
+        const anchor = parse(html).querySelector('a');
+        expect(anchor?.hasAttribute('onmouseover')).toBe(false);
+        expect(anchor?.getAttribute('href')).toEqual(payload);
+        expect(anchor?.textContent).toEqual(payload);
+      });
+
+      test('video with unsafe protocol', () => {
+        const editor = createEditor(
+          new Delta().insert({ video: 'https://example.com/video' }),
+        );
+        editor.scroll.domNode
+          .querySelector('iframe')
+          ?.setAttribute('src', 'javascript:alert(1)');
+        expect(editor.getHTML(0, 1)).toEqual(
+          '<a href="about:blank">about:blank</a>',
+        );
+      });
+
+      test('video with safe url', () => {
+        const editor = createEditor(
+          new Delta().insert({ video: 'https://example.com/v?a=1&b=2' }),
+        );
+        expect(editor.getHTML(0, 1)).toEqual(
+          '<a href="https://example.com/v?a=1&amp;b=2">https://example.com/v?a=1&amp;b=2</a>',
+        );
+      });
     });
 
     test('multiline code', () => {
