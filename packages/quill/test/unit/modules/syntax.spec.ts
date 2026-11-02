@@ -291,5 +291,17 @@ describe('Syntax', () => {
       const quill = createQuill();
       expect(quill.getSemanticHTML()).toContain('data-language="javascript"');
     });
+
+    test('escape code language', () => {
+      const quill = createQuill();
+      const payload = '"><img src=x onerror=alert(1)>';
+      quill.setContents(
+        new Delta().insert('code').insert('\n', { 'code-block': payload }),
+      );
+      const container = document.createElement('div');
+      container.innerHTML = quill.getSemanticHTML();
+      expect(container.querySelector('img')).toBeNull();
+      expect(container.querySelector('pre')?.dataset.language).toEqual(payload);
+    });
   });
 });

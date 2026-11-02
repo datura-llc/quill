@@ -69,7 +69,7 @@ class SnowTooltip extends BaseTooltip {
             // @ts-expect-error Fix me later
             this.preview.textContent = preview;
             // @ts-expect-error Fix me later
-            this.preview.setAttribute('href', preview);
+            this.preview.setAttribute('href', LinkBlot.sanitize(preview));
             this.show();
             const bounds = this.quill.getBounds(this.linkRange);
             if (bounds != null) {
