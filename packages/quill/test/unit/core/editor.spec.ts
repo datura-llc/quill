@@ -7,7 +7,7 @@ import { Registry } from 'parchment';
 import Text from '../../../src/blots/text.js';
 import Emitter from '../../../src/core/emitter.js';
 import Break from '../../../src/blots/break.js';
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { createRegistry } from '../__helpers__/factory.js';
 import List, { ListContainer } from '../../../src/formats/list.js';
 import Bold from '../../../src/formats/bold.js';
@@ -18,6 +18,7 @@ import Header from '../../../src/formats/header.js';
 import Italic from '../../../src/formats/italic.js';
 import { AlignClass } from '../../../src/formats/align.js';
 import Video from '../../../src/formats/video.js';
+import Formula from '../../../src/formats/formula.js';
 import Strike from '../../../src/formats/strike.js';
 import Underline from '../../../src/formats/underline.js';
 import CodeBlock, { CodeBlockContainer } from '../../../src/formats/code.js';
@@ -48,6 +49,7 @@ const createEditor = (htmlOrContents: string | Delta) => {
       Italic,
       AlignClass,
       Video,
+      Formula,
       Strike,
       Underline,
       CodeBlock,
@@ -1393,6 +1395,34 @@ describe('Editor', () => {
       const editor = createEditor('<p><br></p>');
       editor.insertText(0, '<b>Test</b>');
       expect(editor.getHTML(0, 11)).toEqual('&lt;b&gt;Test&lt;/b&gt;');
+    });
+
+    describe('escape embeds', () => {
+      afterEach(() => {
+        vi.unstubAllGlobals();
+      });
+
+      const parse = (html: string) => {
+        const container = document.createElement('div');
+        container.innerHTML = html;
+        return container;
+      };
+
+      test('formula', () => {
+        vi.stubGlobal('katex', {
+          render: (value: string, node: HTMLElement) => {
+            node.textContent = value;
+          },
+        });
+        const payload = '</span><img src=x onerror=alert(1)>';
+        const editor = createEditor(new Delta().insert({ formula: payload }));
+        const html = editor.getHTML(0, 1);
+        expect(html).toEqual(
+          '<span>&lt;/span&gt;&lt;img src=x onerror=alert(1)&gt;</span>',
+        );
+        expect(parse(html).querySelector('img')).toBeNull();
+        expect(parse(html).textContent).toEqual(payload);
+      });
     });
 
     test('multiline code', () => {
